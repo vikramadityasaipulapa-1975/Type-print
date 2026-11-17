@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-typing_fingerprint}
+      POSTGRES_USER: ${POSTGRES_USER:-typing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-typing_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-typing} -d ${POSTGRES_DB:-typing_fingerprint}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-typing}:${POSTGRES_PASSWORD:-typing_dev}@db:5432/${POSTGRES_DB:-typing_fingerprint}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-30}
+      BIOMETRIC_ENCRYPTION_KEY: ${BIOMETRIC_ENCRYPTION_KEY:-}
+      LSTM_CHECKPOINT_PATH: /app/models/keystroke_lstm.pt
+      VERIFICATION_CALIBRATOR_PATH: /app/models/distance_calibrator.joblib
+      MODEL_METRICS_PATH: /app/models/verification.metrics.json
+      MINIMUM_ENROLLMENT_SAMPLES: ${MINIMUM_ENROLLMENT_SAMPLES:-5}
+      MINIMUM_TYPING_EVENTS: ${MINIMUM_TYPING_EVENTS:-10}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./models:/app/models:ro
+    depends_on:
+      db:
+        condition: service_healthy
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - api
+volumes:
+  postgres_data:

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+models/*.joblib
+models/*.pt
+models/*.pth
+models/*.metrics.json
+models/*.json
+ml/data/*.jsonl
+ml/data/*.csv
+ml/data/*.npz
+ml/data/processed/

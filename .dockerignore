@@ -1,0 +1,11 @@
+.git
+.env
+.venv
+**/__pycache__
+**/*.py[cod]
+frontend/node_modules
+frontend/dist
+ml/data/*.jsonl
+ml/data/*.csv
+ml/data/*.npz
+models/*
